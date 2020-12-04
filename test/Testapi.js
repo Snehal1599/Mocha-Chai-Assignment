@@ -2,18 +2,27 @@ var chai = require('chai');
 var expect  = require('chai').expect;
 const chaiHttp = require('chai-http');
 var request = require('request');
+const mysqlConnection = require("../src/database");
 
 var baseURL = 'http://localhost:3000/';
 var count = 0;
+var userID = 0;
 
 chai.use(chaiHttp);
 
 describe('hooks steps', () =>{
+
+    before(function () {
+        mysqlConnection.query("INSERT INTO Employee (FIRSTNAME, LASTNAME, ADDRESS, ORGNAME, SALARY) VALUES ('Aditya', 'Lokhande', 'Kopargaon', 'TCS', 30000)", function(err, result){
+            if(err) throw err;
+            userID = result.insertId;
+        });
+    });
     
     beforeEach(function () {
         console.log("Currently checking for: " + count);
     });
-    
+   
     describe('API test', () =>{
 
         it('Get All User', function(done) {
@@ -27,7 +36,7 @@ describe('hooks steps', () =>{
         });
         
         it('Get An User', function(done) {
-            request(baseURL+"employees/3" , function(error, response, body) {
+            request(baseURL+"employees/" + userID , function(error, response, body) {
                 console.log(body);
                 let bodyObject = JSON.parse(body);
                 expect(bodyObject.success).to.equal(true);
@@ -47,26 +56,26 @@ describe('hooks steps', () =>{
             });
         });
     
-        it('Delete a record', function(done){
-            chai
-            .request(baseURL)
-            .delete('employees/17')
-            .end((err,res) =>{
-                expect(res).to.have.status(200);
-                done();
-            });
-        });
-    
         it('Update a record', function(done){
             chai
             .request(baseURL)
             .put('updateemployee')
-            .send({"ID":15,"FIRSTNAME":"Hrushi","LASTNAME":"Ingale","ADDRESS":"Sinnar","ORGNAME":"Infosys","SALARY":30000})
+            .send({"ID":userID,"FIRSTNAME":"Hrushi","LASTNAME":"Ingale","ADDRESS":"Sinnar","ORGNAME":"Infosys","SALARY":30000})
             .end((err,res) =>{
                 expect(res).to.have.status(200);
                 done();
             });
         })
+
+        it('Delete a record', function(done){
+            chai
+            .request(baseURL)
+            .delete('employees/'+ userID)
+            .end((err,res) =>{
+                expect(res).to.have.status(200);
+                done();
+            });
+        });
     });
 
     afterEach(function () {
